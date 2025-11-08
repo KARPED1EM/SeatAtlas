@@ -25,39 +25,45 @@ A modern classroom seat management web application built with Python FastAPI and
    - Create a virtual environment
    - Install dependencies
    - Start the server
-3. Open your browser to `http://127.0.0.1:8000`
+3. Open your browser to `http://127.0.0.1:1228`
 
 ## Usage
 
 ### Presets
+
 - Switch between presets using the dropdown in the header
 - Create new presets with the "+" button
 - Rename presets with the "✎" button
 - Delete presets with the "×" button
 
 ### Students
+
 - Add students using the "+ Add Student" button in the sidebar
 - Click on a student card to edit details, scores, roles, and notes
 - Students are automatically assigned to the first available seat
 
 ### Edit Mode
+
 - Click "Edit Mode" to enable drag-and-drop functionality
 - Drag students to different seats
 - Students displaced by moves go to the temporary storage area
 - Save changes only when temporary storage is empty
 
 ### Notes
+
 - Click on a student to open their details
 - Add notes with importance levels: Info, Warning, or Important
 - Edit timestamps and note content
 - Notes are sorted by date (newest first)
 
 ### Heatmap
+
 - Toggle the heatmap overlay to visualize student scores
 - Red intensity indicates score level (higher score = more red)
 - Score distribution chart shows overall class performance
 
 ### Import/Export
+
 - Export students and presets as JSON files
 - Import JSON files to restore or migrate data
 - All imports are validated before applying
@@ -85,6 +91,7 @@ SeatAtlas/
 ## Data Storage
 
 All data is stored locally in the `data/` directory:
+
 - `students.json`: Student information
 - `presets.json`: Seating arrangements
 
