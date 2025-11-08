@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeatAtlas</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Small Screen Warning -->
+    <div class="small-screen-overlay">
+        <div>
+            <p>Viewport too small</p>
+            <p>Please use a larger screen to access SeatAtlas</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: #888;">Minimum: 1280x720</p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="app-title">SeatAtlas</h1>
+
+            <div class="header-controls">
+                <!-- Preset Selector -->
+                <div class="preset-control">
+                    <select id="preset-selector" class="glass-select">
+                        <option value="">Loading...</option>
+                    </select>
+                    <button id="new-preset-btn" class="glass-btn" title="New Preset">+</button>
+                    <button id="rename-preset-btn" class="glass-btn" title="Rename Preset">✎</button>
+                    <button id="delete-preset-btn" class="glass-btn" title="Delete Preset">×</button>
+                </div>
+
+                <!-- Heatmap Toggle -->
+                <div class="heatmap-control">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="heatmap-toggle" checked>
+                        <span>Heatmap</span>
+                    </label>
+                </div>
+
+                <!-- Import/Export Button -->
+                <button id="import-export-btn" class="glass-btn">Import/Export</button>
+
+                <!-- Edit Mode Toggle -->
+                <button id="edit-mode-btn" class="glass-btn">Edit Mode</button>
+            </div>
+        </header>
+
+        <!-- Score Distribution Bar -->
+        <div id="score-distribution" class="score-distribution"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Seat Map -->
+            <div class="seat-map-container">
+                <div class="seat-sections">
+                    <!-- Left Section (5 cols × 12 rows) -->
+                    <div class="seat-section left-section">
+                        <div class="section-label">Left Section</div>
+                        <div class="seats-grid left-grid">
+                            {% for row in seat_layout.left %}
+                            {% set row_idx = loop.index0 %}
+                            <div class="seat-row" data-row="{{ row_idx }}">
+                                {% if row and row[0].group %}
+                                <div class="group-label">{{ row[0].group }}</div>
+                                {% else %}
+                                <div class="group-label empty"></div>
+                                {% endif %}
+                                {% for seat in row %}
+                                <div class="seat-card {% if seat.wall %}wall{% endif %}" data-seat-id="{{ seat.id }}" data-group="{{ seat.group or '' }}" data-wall="{{ seat.wall or False }}">
+                                    <div class="seat-content">
+                                    <div class="student-name">{% if seat.wall %}Wall{% else %}Empty{% endif %}</div>
+                                    <div class="student-score"></div>
+                                    </div>
+                                    <div class="heatmap-overlay"></div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                            </div>
+                    </div>
+
+                    <!-- Aisle -->
+                    <div class="aisle"></div>
+
+                    <!-- Right Section (4 cols × 11 rows) -->
+                    <div class="seat-section right-section">
+                        <div class="section-label">Right Section</div>
+                        <div class="seats-grid right-grid">
+                            {% for row in seat_layout.right %}
+                            {% set row_idx = loop.index0 %}
+                            <div class="seat-row" data-row="{{ row_idx }}">
+                                {% for seat in row %}
+                                <div class="seat-card {% if seat.wall %}wall{% endif %}" data-seat-id="{{ seat.id }}" data-group="{{ seat.group or '' }}" data-wall="{{ seat.wall or False }}">
+                                    <div class="seat-content">
+                                        <div class="student-name">{% if seat.wall %}Wall{% else %}Empty{% endif %}</div>
+                                        <div class="student-score"></div>
+                                    </div>
+                                    <div class="heatmap-overlay"></div>
+                                </div>
+                                {% endfor %}
+                                {% if row and row[0].group %}
+                                <div class="group-label">{{ row[0].group }}</div>
+                                {% else %}
+                                <div class="group-label empty"></div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed">
+                <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">☰</button>
+
+                <div class="sidebar-content">
+                    <!-- Edit Mode Actions -->
+                    <div id="edit-actions" class="edit-actions hidden">
+                        <button id="save-changes-btn" class="glass-btn primary">Save Changes</button>
+                        <button id="cancel-changes-btn" class="glass-btn">Cancel</button>
+                    </div>
+
+                    <!-- Unseated Students -->
+                    <div class="unseated-students">
+                        <div class="sidebar-header">
+                            <h3>Unseated Students</h3>
+                            <button id="add-student-btn" class="glass-btn" title="Add Student">+</button>
+                        </div>
+                        <div id="unseated-list" class="student-list"></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Student Details Modal -->
+    <div id="student-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="modal-student-name">Student Details</h2>
+                <button class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="student-info">
+                    <div class="info-row">
+                        <label>Name:</label>
+                        <input type="text" id="modal-name-input" class="glass-input">
+                    </div>
+                    <div class="info-row">
+                        <label>Score (0-100):</label>
+                        <input type="number" id="modal-score-input" class="glass-input" min="0" max="100">
+                    </div>
+                    <div class="info-row">
+                        <label>Role:</label>
+                        <select id="modal-role-select" class="glass-select">
+                            <option value="">None</option>
+                            <option value="leader">Leader</option>
+                            <option value="cadre">Cadre</option>
+                        </select>
+                        <input type="text" id="modal-cadre-text" class="glass-input" placeholder="Cadre title" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="notes-section">
+                    <div class="notes-header">
+                        <h3>Notes</h3>
+                        <button id="add-note-btn" class="glass-btn">+ Add Note</button>
+                    </div>
+                    <div id="notes-list" class="notes-list"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="save-student-btn" class="glass-btn primary">Save</button>
+                    <button id="delete-student-btn" class="glass-btn danger">Delete Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Edit Modal -->
+    <div id="note-modal" class="modal hidden">
+        <div class="modal-content glass-panel small">
+            <div class="modal-header">
+                <h2>Edit Note</h2>
+                <button class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-row">
+                    <label>Importance:</label>
+                    <select id="note-importance-select" class="glass-select">
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="important">Important</option>
+                    </select>
+                </div>
+                <div class="info-row">
+                    <label>Date & Time:</label>
+                    <input type="datetime-local" id="note-timestamp-input" class="glass-input">
+                </div>
+                <div class="info-row">
+                    <label>Note:</label>
+                    <textarea id="note-text-input" class="glass-textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button id="save-note-btn" class="glass-btn primary">Save</button>
+                    <button id="delete-note-btn" class="glass-btn danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content glass-panel small">
+            <div class="modal-header">
+                <h2>Confirm</h2>
+                <button class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-message" id="confirm-message"></div>
+                <div class="modal-actions">
+                    <button id="confirm-yes-btn" class="glass-btn primary">Yes</button>
+                    <button id="confirm-no-btn" class="glass-btn">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Modal -->
+    <div id="prompt-modal" class="modal hidden">
+        <div class="modal-content glass-panel small">
+            <div class="modal-header">
+                <h2 id="prompt-title">Input</h2>
+                <button class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="prompt-message" id="prompt-message"></div>
+                <input type="text" id="prompt-input" class="glass-input" />
+                <div class="modal-actions">
+                    <button id="prompt-ok-btn" class="glass-btn primary">OK</button>
+                    <button id="prompt-cancel-btn" class="glass-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import/Export Modal -->
+    <div id="import-export-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2>Import / Export</h2>
+                <button class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-section">
+                    <h3>Export Data</h3>
+                    <div class="export-buttons">
+                        <button id="export-students-btn" class="glass-btn">Export Students</button>
+                        <button id="export-presets-btn" class="glass-btn">Export Presets</button>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="import-section">
+                    <h3>Import Data</h3>
+                    <div class="import-buttons">
+                        <label class="glass-btn" for="import-students-input">Import Students</label>
+                        <input type="file" id="import-students-input" accept=".json" style="display: none;">
+                        <label class="glass-btn" for="import-presets-input">Import Presets</label>
+                        <input type="file" id="import-presets-input" accept=".json" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
