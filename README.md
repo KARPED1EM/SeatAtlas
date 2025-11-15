@@ -120,7 +120,3 @@ Files are written atomically with file locking to prevent corruption.
 - **Style**: Glassmorphism with blur effects, rounded corners, and subtle shadows
 - **Transitions**: Smooth 150-250ms animations using transform/opacity
 - **Responsive**: Adapts to different screen sizes
-
-## License
-
-This project is built for educational and classroom management purposes.
